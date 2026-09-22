@@ -12,7 +12,11 @@ main{max-width:900px;margin:auto;padding:18px}h1{text-align:center;font-size:25p
 button{width:100%;padding:15px;border:0;border-radius:11px;background:#f7931a;color:white;font-weight:700;font-size:17px}
 button:disabled{opacity:.5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0f141b;padding:12px;border-radius:11px}.muted{color:#8d99a8;font-size:13px}.progress{height:8px;background:#29313c;border-radius:8px;overflow:hidden;margin:10px 0}.bar{height:100%;width:0;background:#f7931a}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid #29313c;text-align:left;word-break:break-all}th{color:#9da8b5}
-.wrap{overflow:auto}.ok{color:#8fda70}.err{color:#ff7777}@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
+.wrap{overflow:auto}.ok{color:#8fda70}.err{color:#ff7777}.warn{color:#ffb347}
+.lab{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#090d12;border:1px solid #252e39;border-radius:10px;padding:11px;margin-top:9px;color:#aeb9c6;font-size:11px;line-height:1.65;min-height:150px;overflow:hidden}
+.scanbar{height:7px;background:#202833;border-radius:8px;overflow:hidden}.scanfill{height:100%;width:0;background:#7aa7ff}
+.badge{display:inline-block;font-size:10px;border:1px solid #805b24;border-radius:5px;padding:2px 5px;color:#ffb347;vertical-align:middle}
+@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -28,6 +32,15 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;b
 <div class="progress"><div id="bar" class="bar"></div></div>
 <div id="status" class="muted">Gati.</div>
 </div>
+
+<div class="card">
+<h3>Private-Key Research Console <span class="badge">SIMULATION</span></h3>
+<div class="muted">Konsolë demonstrimi për UI/research. Gjeneron vetëm të dhëna fiktive në shfletues; nuk provon private keys reale dhe nuk mund të aksesojë fonde.</div>
+<div class="lab" id="lablog">[BOOT] BTC research console v2.4<br>[MODE] PRIVATE-KEY SIMULATION<br>[SOURCE] LOCAL DEMO DATA<br>[ACCESS] REAL PRIVATE-KEY OPERATIONS: DISABLED<br>[STATUS] Waiting for analysis...</div>
+<div class="scanbar" style="margin-top:10px"><div id="scanfill" class="scanfill"></div></div>
+<button id="sim" style="margin-top:10px;background:#334155">RUN KEYSPACE DEMONSTRATION</button>
+</div>
+
 <div class="card grid">
 <div class="stat"><span class="muted">Blocks</span><br><b id="blocks">0</b></div>
 <div class="stat"><span class="muted">Transactions</span><br><b id="txs">0</b></div>
@@ -57,31 +70,45 @@ async function scan(){
  $('status').textContent='Duke marrë lartësinë e blockchain-it...';
  try{
   const tip=await fetch(API+'/blocks/tip/height',{cache:'no-store'}).then(r=>r.text());
-  const n=Number($('count').value);
-  let total=0;
+  const n=Number($('count').value);let total=0;
   for(let i=0;i<n;i++){
-   const h=Number(tip)-i;
-   $('status').textContent='Block '+h+' — '+(i+1)+'/'+n;
+   const h=Number(tip)-i;$('status').textContent='Block '+h+' — '+(i+1)+'/'+n;
    const hash=await fetch(API+'/block-height/'+h).then(r=>r.text());
-   const txids=await get('/block/'+hash+'/txids');
-   total+=txids.length;$('txs').textContent=total;
+   const txids=await get('/block/'+hash+'/txids');total+=txids.length;$('txs').textContent=total;
    for(const id of txids.slice(0,50)){
-    try{
-     const tx=await get('/tx/'+id);
-     for(const v of (tx.vout||[])){
-      if(v.scriptpubkey_address) seen.set(v.scriptpubkey_address,id);
-     }
-    }catch(e){}
+    try{const tx=await get('/tx/'+id);for(const v of (tx.vout||[])){if(v.scriptpubkey_address)seen.set(v.scriptpubkey_address,id)}}catch(e){}
     render();
    }
    $('blocks').textContent=i+1;$('bar').style.width=((i+1)/n*100)+'%';
   }
   $('status').innerHTML='<span class="ok">Skanimi përfundoi.</span>';
- }catch(e){
-  $('status').innerHTML='<span class="err">Gabim: '+escapeHtml(e.message)+'</span>';
- }finally{btn.disabled=false}
+ }catch(e){$('status').innerHTML='<span class="err">Gabim: '+escapeHtml(e.message)+'</span>'}
+ finally{btn.disabled=false}
 }
 $('start').onclick=scan;
+
+function fakeHex(n=64){let s='';const h='0123456789abcdef';for(let i=0;i<n;i++)s+=h[Math.floor(Math.random()*16)];return s}
+$('sim').onclick=async()=>{
+ const b=$('sim'),f=$('scanfill'),log=$('lablog');b.disabled=true;f.style.width='0%';
+ log.innerHTML='[BOOT] Research engine started<br>[MODE] SIMULATION ONLY<br>';
+ const stages=[
+ '[CORE] Loading synthetic keyspace partitions...',
+ '[HASH] Generating demo SHA-256 fingerprints: '+fakeHex(32),
+ '[DERIVE] Simulating address derivation pipeline...',
+ '[COMPARE] Comparing against public-address dataset...',
+ '[TEST] Synthetic candidate #'+Math.floor(Math.random()*9000000),
+ '[FILTER] Private-key execution disabled by design...',
+ '[RESULT] Demo candidates evaluated: '+(Math.floor(Math.random()*9000)+1000),
+ '[DONE] Simulation complete — no real private keys accessed.'
+ ];
+ for(let i=0;i<stages.length;i++){
+  await new Promise(r=>setTimeout(r,380));
+  f.style.width=((i+1)/stages.length*100)+'%';
+  log.innerHTML+='<br>'+stages[i];
+  log.scrollTop=log.scrollHeight;
+ }
+ b.disabled=false;
+};
 </script>
 </body>
 </html>
