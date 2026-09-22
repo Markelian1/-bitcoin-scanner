@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0f14">
+<title>BTC Network Scanner</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0f14;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif}
+main{max-width:900px;margin:auto;padding:18px}h1{text-align:center;font-size:25px}
+.card{background:#151b23;border:1px solid #29313c;border-radius:16px;padding:16px;margin:12px 0}
+button{width:100%;padding:15px;border:0;border-radius:11px;background:#f7931a;color:white;font-weight:700;font-size:17px}
+button:disabled{opacity:.5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0f141b;padding:12px;border-radius:11px}.muted{color:#8d99a8;font-size:13px}.progress{height:8px;background:#29313c;border-radius:8px;overflow:hidden;margin:10px 0}.bar{height:100%;width:0;background:#f7931a}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid #29313c;text-align:left;word-break:break-all}th{color:#9da8b5}
+.wrap{overflow:auto}.ok{color:#8fda70}.err{color:#ff7777}@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>₿ BTC Network Scanner</h1>
+<div class="card">
+<div class="muted">Analizon të dhëna publike të Bitcoin blockchain. Nuk kërkon seed phrase ose private keys.</div>
+<p class="muted">Skanimi merr blloqe të fundit dhe nxjerr adresat publike që shfaqen në transaksionet e tyre.</p>
+<select id="count" style="width:100%;padding:12px;background:#0b0f14;color:#fff;border:1px solid #394352;border-radius:9px;margin-bottom:9px">
+<option value="3">3 blocks</option><option value="5" selected>5 blocks</option><option value="10">10 blocks</option>
+</select>
+<button id="start">START NETWORK SCAN</button>
+<div class="progress"><div id="bar" class="bar"></div></div>
+<div id="status" class="muted">Gati.</div>
+</div>
+<div class="card grid">
+<div class="stat"><span class="muted">Blocks</span><br><b id="blocks">0</b></div>
+<div class="stat"><span class="muted">Transactions</span><br><b id="txs">0</b></div>
+<div class="stat"><span class="muted">Addresses</span><br><b id="addresses">0</b></div>
+</div>
+<div class="card">
+<h3>Public addresses found</h3>
+<div class="wrap"><table><thead><tr><th>Address</th><th>Seen in TX</th></tr></thead><tbody id="out"></tbody></table></div>
+</div>
+</main>
+<script>
+const API='https://blockstream.info/api';
+const $=id=>document.getElementById(id);
+const seen=new Map();
+async function get(path){
+ const r=await fetch(API+path,{cache:'no-store'});
+ if(!r.ok) throw new Error('API HTTP '+r.status);
+ return r.json();
+}
+function render(){
+ $('addresses').textContent=seen.size;
+ $('out').innerHTML=[...seen].slice(0,300).map(([a,t])=>'<tr><td>'+escapeHtml(a)+'</td><td>'+escapeHtml(t)+'</td></tr>').join('');
+}
+function escapeHtml(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function scan(){
+ const btn=$('start');btn.disabled=true;seen.clear();render();
+ $('status').textContent='Duke marrë lartësinë e blockchain-it...';
+ try{
+  const tip=await fetch(API+'/blocks/tip/height',{cache:'no-store'}).then(r=>r.text());
+  const n=Number($('count').value);
+  let total=0;
+  for(let i=0;i<n;i++){
+   const h=Number(tip)-i;
+   $('status').textContent='Block '+h+' — '+(i+1)+'/'+n;
+   const hash=await fetch(API+'/block-height/'+h).then(r=>r.text());
+   const txids=await get('/block/'+hash+'/txids');
+   total+=txids.length;$('txs').textContent=total;
+   for(const id of txids.slice(0,50)){
+    try{
+     const tx=await get('/tx/'+id);
+     for(const v of (tx.vout||[])){
+      if(v.scriptpubkey_address) seen.set(v.scriptpubkey_address,id);
+     }
+    }catch(e){}
+    render();
+   }
+   $('blocks').textContent=i+1;$('bar').style.width=((i+1)/n*100)+'%';
+  }
+  $('status').innerHTML='<span class="ok">Skanimi përfundoi.</span>';
+ }catch(e){
+  $('status').innerHTML='<span class="err">Gabim: '+escapeHtml(e.message)+'</span>';
+ }finally{btn.disabled=false}
+}
+$('start').onclick=scan;
+</script>
+</body>
+</html>
