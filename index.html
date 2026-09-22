@@ -1,113 +1,22 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#05070b"><title>BTC Wallet Discovery Terminal</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070b"><title>BTC Wallet Discovery Terminal</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#05070b;color:#d9e2ee;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}main{max-width:1100px;margin:auto;padding:14px}
-.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1b2532;padding:8px 2px 13px}.brand{font:800 20px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}.live{font-size:10px;color:#6df0a5}
-.card{background:#0a0f16;border:1px solid #1b2634;border-radius:10px;padding:13px;margin:11px 0;box-shadow:0 8px 28px #0007}h2{font:800 13px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:0 0 9px}
-.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.stat{background:#070b11;border:1px solid #17212d;border-radius:7px;padding:9px}.sub{color:#637286;font-size:9px}.num{font-size:18px;font-weight:800;margin-top:4px}.green{color:#69e6a0}.blue{color:#77aaff}.amber{color:#f0b354}.red{color:#ff6876}
-.console{height:300px;background:#020407;border:1px solid #15202c;border-radius:7px;padding:11px;overflow:auto;font-size:10px;line-height:1.7}.line{white-space:nowrap}.dim{color:#536276}.cyan{color:#72d9ff}.ok{color:#72e5a1}.warn{color:#f0b354}
-.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.control{background:#070b11;border:1px solid #17212d;border-radius:7px;padding:9px}.control label{display:block;color:#637286;font-size:9px;margin-bottom:5px}.control select{width:100%;background:#0d141d;color:#d9e2ee;border:1px solid #263342;border-radius:5px;padding:7px}
-button{width:100%;padding:13px;border:0;border-radius:7px;background:#245ee8;color:white;font-weight:800;letter-spacing:.7px;margin-top:10px}button:disabled{opacity:.55}
-.row{display:flex;justify-content:space-between;border-bottom:1px solid #151e29;padding:7px 0;font-size:10px}.wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:9px}th,td{text-align:left;padding:7px;border-bottom:1px solid #151e29;word-break:break-all}th{color:#65748a}.high{color:#69e6a0;font-weight:800}.age{color:#f0b354}
-@media(max-width:760px){.grid{grid-template-columns:repeat(3,1fr)}.controls{grid-template-columns:1fr}}@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.console{height:270px}}
-</style>
-</head>
-<body><main>
+*{box-sizing:border-box}body{margin:0;background:#05070b;color:#d9e2ee;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}main{max-width:1100px;margin:auto;padding:14px}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1b2532;padding:8px 2px 13px}.brand{font:800 20px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}.live{font-size:10px;color:#6df0a5}.card{background:#0a0f16;border:1px solid #1b2634;border-radius:10px;padding:13px;margin:11px 0;box-shadow:0 8px 28px #0007}h2{font:800 13px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:0 0 9px}.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.stat{background:#070b11;border:1px solid #17212d;border-radius:7px;padding:9px}.sub{color:#637286;font-size:9px}.num{font-size:18px;font-weight:800;margin-top:4px}.green{color:#69e6a0}.blue{color:#77aaff}.amber{color:#f0b354}.console{height:300px;background:#020407;border:1px solid #15202c;border-radius:7px;padding:11px;overflow:auto;font-size:10px;line-height:1.7}.line{white-space:nowrap}.dim{color:#536276}.cyan{color:#72d9ff}.ok{color:#72e5a1}.warn{color:#f0b354}.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.control{background:#070b11;border:1px solid #17212d;border-radius:7px;padding:9px}.control label{display:block;color:#637286;font-size:9px;margin-bottom:5px}.control select{width:100%;background:#0d141d;color:#d9e2ee;border:1px solid #263342;border-radius:5px;padding:7px}button{width:100%;padding:13px;border:0;border-radius:7px;background:#245ee8;color:white;font-weight:800;letter-spacing:.7px;margin-top:10px}button:disabled{opacity:.55}.row{display:flex;justify-content:space-between;border-bottom:1px solid #151e29;padding:7px 0;font-size:10px}.wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:9px}th,td{text-align:left;padding:7px;border-bottom:1px solid #151e29;word-break:break-all}th{color:#65748a}.high{color:#69e6a0;font-weight:800}.age{color:#f0b354}@media(max-width:760px){.grid{grid-template-columns:repeat(3,1fr)}.controls{grid-template-columns:1fr}}@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.console{height:270px}}
+</style></head><body><main>
 <div class="top"><div class="brand">₿ BTC WALLET DISCOVERY TERMINAL</div><div class="live">● MAINNET ONLINE</div></div>
-<div class="card"><h2>BLOCKCHAIN TELEMETRY</h2><div class="grid">
-<div class="stat"><span class="sub">TIP HEIGHT</span><div class="num" id="height">—</div></div>
-<div class="stat"><span class="sub">BLOCKS</span><div class="num blue" id="blocks">0</div></div>
-<div class="stat"><span class="sub">TX SCANNED</span><div class="num blue" id="tx">0</div></div>
-<div class="stat"><span class="sub">ADDRESSES</span><div class="num green" id="addr">0</div></div>
-<div class="stat"><span class="sub">UTXOs</span><div class="num amber" id="utxo">0</div></div>
-<div class="stat"><span class="sub">BTC FOUND</span><div class="num" id="btc">0</div></div>
-</div></div>
-<div class="card"><h2>PUBLIC WALLET DISCOVERY</h2>
-<div class="controls">
-<div class="control"><label>BLOCK WINDOW</label><select id="window"><option value="3" selected>3 blocks</option><option value="5">5 blocks</option><option value="10">10 blocks</option></select></div>
-<div class="control"><label>MAX TX / BLOCK</label><select id="limit"><option value="5" selected>5</option><option value="10">10</option><option value="25">25</option></select></div>
-<div class="control"><label>MIN UTXO (BTC)</label><select id="min"><option value="0.01" selected>0.01</option><option value="0.1">0.1</option><option value="1">1</option></select></div>
-</div>
-<div class="console" id="console"></div><button id="run">SCAN PUBLIC BLOCKCHAIN</button></div>
-<div class="card"><h2>DISCOVERY RESULTS</h2>
-<div class="row"><span>Candidate addresses with UTXO</span><b id="candidates">0</b></div>
-<div class="row"><span>Largest observed UTXO</span><b id="largest">0 BTC</b></div>
-<div class="row"><span>Oldest observed block</span><b id="oldest">—</b></div>
-<div class="row"><span>Analysis scope</span><b class="green">PUBLIC BLOCKCHAIN</b></div>
-</div>
+<div class="card"><h2>BLOCKCHAIN TELEMETRY</h2><div class="grid"><div class="stat"><span class="sub">TIP HEIGHT</span><div class="num" id="height">—</div></div><div class="stat"><span class="sub">BLOCKS</span><div class="num blue" id="blocks">0</div></div><div class="stat"><span class="sub">TX SCANNED</span><div class="num blue" id="tx">0</div></div><div class="stat"><span class="sub">ADDRESSES</span><div class="num green" id="addr">0</div></div><div class="stat"><span class="sub">UTXOs</span><div class="num amber" id="utxo">0</div></div><div class="stat"><span class="sub">BTC FOUND</span><div class="num" id="btc">0</div></div></div></div>
+<div class="card"><h2>PUBLIC WALLET DISCOVERY</h2><div class="controls"><div class="control"><label>BLOCK WINDOW</label><select id="window"><option value="3" selected>3 blocks</option><option value="5">5 blocks</option><option value="10">10 blocks</option></select></div><div class="control"><label>MAX TX / BLOCK</label><select id="limit"><option value="5" selected>5</option><option value="10">10</option><option value="25">25</option></select></div><div class="control"><label>MIN UTXO (BTC)</label><select id="min"><option value="0.01" selected>0.01</option><option value="0.1">0.1</option><option value="1">1</option></select></div></div><div class="console" id="console"></div><button id="run">SCAN PUBLIC BLOCKCHAIN</button></div>
+<div class="card"><h2>DISCOVERY RESULTS</h2><div class="row"><span>Candidate addresses with UTXO</span><b id="candidates">0</b></div><div class="row"><span>Largest observed UTXO</span><b id="largest">0 BTC</b></div><div class="row"><span>Oldest observed block</span><b id="oldest">—</b></div><div class="row"><span>Analysis scope</span><b class="green">PUBLIC BLOCKCHAIN</b></div></div>
 <div class="card"><h2>ADDRESS / UTXO INDEX</h2><div class="wrap"><table><thead><tr><th>ADDRESS</th><th>VALUE BTC</th><th>TXID</th><th>BLOCK</th><th>AGE</th></tr></thead><tbody id="out"></tbody></table></div></div>
 </main>
 <script>
-const ENGINES=[
- {name:'MEMPOOL',base:'https://mempool.space/api'},
- {name:'BLOCKSTREAM',base:'https://blockstream.info/api'}
-];
-const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));let results=[],engine=null;
+const ENGINES=[{name:'MEMPOOL',base:'https://mempool.space/api'},{name:'BLOCKSTREAM',base:'https://blockstream.info/api'}],$=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));let engine=null,results=[];
 function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function log(cls,msg){const c=$('console'),t=new Date().toLocaleTimeString('en-GB',{hour12:false});c.innerHTML+='<div class="line"><span class="dim">['+t+']</span> <span class="'+cls+'">'+msg+'</span></div>';c.scrollTop=c.scrollHeight}
-async function get(path,retries=2){
- let last='';
- for(let k=0;k<retries;k++){
-  try{
-   const r=await fetch(engine.base+path,{cache:'no-store'});
-   if(r.ok){const txt=await r.text();if(!txt.trim())throw Error('empty response');return txt}
-   last='HTTP '+r.status;
-   if(r.status===429)await sleep(900*(k+1));else await sleep(300);
-  }catch(e){last=e.message;await sleep(400)}
- }
- throw Error(engine.name+' '+last);
-}
-async function getJSON(path){return JSON.parse(await get(path))}
-async function selectEngine(){
- for(const e of ENGINES){
-  engine=e;
-  try{const v=Number((await get('/blocks/tip/height')).trim());if(Number.isFinite(v)&&v>0)return v}catch(e){}
- }
- throw Error('No blockchain API available right now');
-}
-function render(){
- results.sort((a,b)=>b.value-a.value);
- $('candidates').textContent=results.length.toLocaleString();
- const total=results.reduce((s,x)=>s+x.value,0);$('btc').textContent=total.toFixed(4);
- $('largest').textContent=(results[0]?.value||0).toFixed(6)+' BTC';
- $('oldest').textContent=results.length?Math.min(...results.map(x=>x.block)).toLocaleString():'—';
- $('addr').textContent=new Set(results.map(x=>x.address)).size.toLocaleString();
- $('out').innerHTML=results.slice(0,250).map(x=>'<tr><td>'+esc(x.address)+'</td><td class="high">'+x.value.toFixed(8)+'</td><td>'+esc(x.txid)+'</td><td>'+x.block.toLocaleString()+'</td><td class="age">'+x.age+' blocks</td></tr>').join('');
-}
-async function scan(){
- const btn=$('run');btn.disabled=true;results=[];$('console').innerHTML='';$('tx').textContent='0';$('utxo').textContent='0';$('blocks').textContent='0';$('addr').textContent='0';
- try{
-  const tip=await selectEngine();$('height').textContent=tip.toLocaleString();
-  const count=Number($('window').value),lim=Number($('limit').value),min=Number($('min').value);
-  log('cyan','API '+engine.name+'  :: tip='+tip);
-  log('cyan','INDEX WINDOW  :: '+count+' blocks');
-  for(let i=0;i<count;i++){
-   const h=tip-i,hash=(await get('/block-height/'+h)).trim(),ids=await getJSON('/block/'+hash+'/txids');
-   $('blocks').textContent=(i+1).toLocaleString();log('cyan','BLOCK '+h+' :: '+ids.length+' tx');
-   for(const txid of ids.slice(0,lim)){
-    const tx=await getJSON('/tx/'+txid);$('tx').textContent=(Number($('tx').textContent)+1).toLocaleString();
-    for(const v of(tx.vout||[])){
-     const addr=v.scriptpubkey_address,val=(v.value||0)/100000000;
-     if(addr&&val>=min){
-      try{
-       const spent=await getJSON('/tx/'+txid+'/outspend/'+v.n);
-       if(!spent.spent){results.push({address:addr,value:val,txid,block:h,age:tip-h});$('utxo').textContent=results.length.toLocaleString()}
-      }catch(e){log('warn','UTXO CHECK SKIPPED :: '+e.message)}
-     }
-    }
-   }
-   render();await sleep(150);
-  }
-  log('ok','SCAN COMPLETE :: '+results.length+' unspent outputs indexed');
-  log('ok','SOURCE :: '+engine.name);
- }catch(e){
-  log('warn','SCAN ERROR :: '+e.message);
-  if(String(e.message).includes('429'))log('warn','RATE LIMIT DETECTED :: retry later or reduce scan window');
- }finally{btn.disabled=false}
-}
-$('run').onclick=scan;
-(async()=>{try{const tip=await selectEngine();$('height').textContent=tip.toLocaleString();log('ok','ENGINE READY :: '+engine.name+' :: tip='+tip)}catch(e){log('warn','ENGINE OFFLINE :: '+e.message)}})();
+async function get(path,retries=2){let last='';for(let k=0;k<retries;k++){try{const r=await fetch(engine.base+path,{cache:'no-store'});if(r.ok)return await r.text();last='HTTP '+r.status;if(r.status===429)await sleep(900*(k+1));else await sleep(300)}catch(e){last=e.message;await sleep(400)}}throw Error(engine.name+' '+last)}
+async function json(path){return JSON.parse(await get(path))}
+async function selectEngine(){for(const e of ENGINES){engine=e;try{const n=Number((await get('/blocks/tip/height')).trim());if(Number.isFinite(n)&&n>0)return n}catch(_){}}throw Error('No blockchain API available')}
+function render(){results.sort((a,b)=>b.value-a.value);$('candidates').textContent=results.length.toLocaleString();$('btc').textContent=results.reduce((s,x)=>s+x.value,0).toFixed(4);$('largest').textContent=(results[0]?.value||0).toFixed(6)+' BTC';$('oldest').textContent=results.length?Math.min(...results.map(x=>x.block)).toLocaleString():'—';$('addr').textContent=new Set(results.map(x=>x.address)).size.toLocaleString();$('out').innerHTML=results.slice(0,250).map(x=>'<tr><td>'+esc(x.address)+'</td><td class="high">'+x.value.toFixed(8)+'</td><td>'+esc(x.txid)+'</td><td>'+x.block.toLocaleString()+'</td><td class="age">'+x.age+' blocks</td></tr>').join('')}
+async function scan(){const btn=$('run');btn.disabled=true;results=[];$('console').innerHTML='';$('tx').textContent='0';$('utxo').textContent='0';$('blocks').textContent='0';$('addr').textContent='0';try{const tip=await selectEngine();$('height').textContent=tip.toLocaleString();const count=Number($('window').value),lim=Number($('limit').value),min=Number($('min').value);log('cyan','API '+engine.name+' :: tip='+tip);for(let i=0;i<count;i++){const h=tip-i,hash=(await get('/block-height/'+h)).trim(),ids=await json('/block/'+hash+'/txids');$('blocks').textContent=(i+1).toLocaleString();log('cyan','BLOCK '+h+' :: '+ids.length+' tx');for(const txid of ids.slice(0,lim)){const tx=await json('/tx/'+txid);$('tx').textContent=(Number($('tx').textContent)+1).toLocaleString();let outs;try{outs=await json('/tx/'+txid+'/outspends')}catch(e){outs=[];log('warn','OUTSPENDS UNAVAILABLE :: '+e.message)}for(const v of(tx.vout||[])){const addr=v.scriptpubkey_address,val=(v.value||0)/100000000;if(addr&&val>=min&&outs[v.n]&&!outs[v.n].spent){results.push({address:addr,value:val,txid,block:h,age:tip-h});$('utxo').textContent=results.length.toLocaleString()}}}render();await sleep(150)}log('ok','SCAN COMPLETE :: '+results.length+' unspent outputs indexed');log('ok','SOURCE :: '+engine.name)}catch(e){log('warn','SCAN ERROR :: '+e.message)}finally{btn.disabled=false}}
+$('run').onclick=scan;(async()=>{try{const tip=await selectEngine();$('height').textContent=tip.toLocaleString();log('ok','ENGINE READY :: '+engine.name+' :: tip='+tip)}catch(e){log('warn','ENGINE OFFLINE :: '+e.message)}})();
 </script></body></html>
