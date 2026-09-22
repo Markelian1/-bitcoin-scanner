@@ -176,7 +176,7 @@ def main():
     finally:
         value = "0" * len(value)
 
-    print("\nTARGET:", TARGET)
+    print("\nTARGET:", target)
     for compressed, address, ok in matches:
         label = "compressed" if compressed else "uncompressed"
         print(f"{label:12} -> {address}   {'MATCH' if ok else 'NO MATCH'}")
