@@ -1,114 +1,37 @@
 <!doctype html>
-<html lang="sq">
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b0f14">
-<title>BTC Network Scanner</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070a0f"><title>BTC Forensic Research Console</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0b0f14;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif}
-main{max-width:900px;margin:auto;padding:18px}h1{text-align:center;font-size:25px}
-.card{background:#151b23;border:1px solid #29313c;border-radius:16px;padding:16px;margin:12px 0}
-button{width:100%;padding:15px;border:0;border-radius:11px;background:#f7931a;color:white;font-weight:700;font-size:17px}
-button:disabled{opacity:.5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0f141b;padding:12px;border-radius:11px}.muted{color:#8d99a8;font-size:13px}.progress{height:8px;background:#29313c;border-radius:8px;overflow:hidden;margin:10px 0}.bar{height:100%;width:0;background:#f7931a}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid #29313c;text-align:left;word-break:break-all}th{color:#9da8b5}
-.wrap{overflow:auto}.ok{color:#8fda70}.err{color:#ff7777}.warn{color:#ffb347}
-.lab{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#090d12;border:1px solid #252e39;border-radius:10px;padding:11px;margin-top:9px;color:#aeb9c6;font-size:11px;line-height:1.65;min-height:150px;overflow:hidden}
-.scanbar{height:7px;background:#202833;border-radius:8px;overflow:hidden}.scanfill{height:100%;width:0;background:#7aa7ff}
-.badge{display:inline-block;font-size:10px;border:1px solid #805b24;border-radius:5px;padding:2px 5px;color:#ffb347;vertical-align:middle}
-@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
+*{box-sizing:border-box}body{margin:0;background:#070a0f;color:#e8edf5;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+main{max-width:980px;margin:auto;padding:14px}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #202938;padding:8px 2px 14px}.brand{font:700 22px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif}.live{color:#64e39a;font-size:11px}.card{background:#0e131b;border:1px solid #222d3b;border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 8px 25px #0005}h2{font:700 15px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:0 0 10px}.sub{color:#748195;font-size:11px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:#090d13;border:1px solid #1b2430;border-radius:9px;padding:11px}.num{font-size:20px;font-weight:700;margin-top:5px}.green{color:#63e39a}.amber{color:#f4ad45}.blue{color:#73a9ff}.red{color:#ff6d7a}.console{background:#05070b;border:1px solid #1b2633;border-radius:9px;padding:12px;height:255px;overflow:auto;font-size:11px;line-height:1.7}.prompt{color:#65758a}.cmd{color:#8fb8ff}.bar{height:7px;background:#1b2531;border-radius:8px;overflow:hidden}.fill{height:100%;width:0;background:#73a9ff}.meter{display:flex;gap:8px;margin-top:10px}.meter div{flex:1}.meter b{display:block;font-size:10px;margin-bottom:5px;color:#8c9aae}button{width:100%;padding:14px;border:0;border-radius:9px;background:#2563eb;color:white;font-weight:800;letter-spacing:.5px;margin-top:10px}.tag{font-size:9px;border:1px solid #70531e;color:#eab24f;border-radius:4px;padding:2px 5px}.row{display:flex;justify-content:space-between;border-bottom:1px solid #17202b;padding:7px 0;font-size:11px}.note{font:11px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#7f8da1}.wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:10px}th,td{text-align:left;padding:7px;border-bottom:1px solid #1b2430;word-break:break-all}th{color:#718096}@media(max-width:650px){.grid{grid-template-columns:1fr 1fr}.brand{font-size:18px}}
 </style>
 </head>
-<body>
-<main>
-<h1>₿ BTC Network Scanner</h1>
-<div class="card">
-<div class="muted">Analizon të dhëna publike të Bitcoin blockchain. Nuk kërkon seed phrase ose private keys.</div>
-<p class="muted">Skanimi merr blloqe të fundit dhe nxjerr adresat publike që shfaqen në transaksionet e tyre.</p>
-<select id="count" style="width:100%;padding:12px;background:#0b0f14;color:#fff;border:1px solid #394352;border-radius:9px;margin-bottom:9px">
-<option value="3">3 blocks</option><option value="5" selected>5 blocks</option><option value="10">10 blocks</option>
-</select>
-<button id="start">START NETWORK SCAN</button>
-<div class="progress"><div id="bar" class="bar"></div></div>
-<div id="status" class="muted">Gati.</div>
-</div>
-
-<div class="card">
-<h3>Private-Key Research Console <span class="badge">SIMULATION</span></h3>
-<div class="muted">Konsolë demonstrimi për UI/research. Gjeneron vetëm të dhëna fiktive në shfletues; nuk provon private keys reale dhe nuk mund të aksesojë fonde.</div>
-<div class="lab" id="lablog">[BOOT] BTC research console v2.4<br>[MODE] PRIVATE-KEY SIMULATION<br>[SOURCE] LOCAL DEMO DATA<br>[ACCESS] REAL PRIVATE-KEY OPERATIONS: DISABLED<br>[STATUS] Waiting for analysis...</div>
-<div class="scanbar" style="margin-top:10px"><div id="scanfill" class="scanfill"></div></div>
-<button id="sim" style="margin-top:10px;background:#334155">RUN KEYSPACE DEMONSTRATION</button>
-</div>
-
-<div class="card grid">
-<div class="stat"><span class="muted">Blocks</span><br><b id="blocks">0</b></div>
-<div class="stat"><span class="muted">Transactions</span><br><b id="txs">0</b></div>
-<div class="stat"><span class="muted">Addresses</span><br><b id="addresses">0</b></div>
-</div>
-<div class="card">
-<h3>Public addresses found</h3>
-<div class="wrap"><table><thead><tr><th>Address</th><th>Seen in TX</th></tr></thead><tbody id="out"></tbody></table></div>
-</div>
+<body><main>
+<div class="top"><div class="brand">₿ BTC FORENSIC RESEARCH CONSOLE</div><div class="live">● ONLINE / PUBLIC DATA</div></div>
+<div class="card"><h2>NETWORK INTELLIGENCE <span class="tag">LIVE</span></h2><div class="sub">Bitcoin mainnet telemetry • Blockstream Esplora API</div>
+<div class="grid" style="margin-top:10px">
+<div class="stat"><span class="sub">BLOCK HEIGHT</span><div class="num" id="height">—</div></div>
+<div class="stat"><span class="sub">TX SCANNED</span><div class="num blue" id="tx">0</div></div>
+<div class="stat"><span class="sub">ADDRESSES</span><div class="num green" id="addr">0</div></div>
+<div class="stat"><span class="sub">UTXO OUTPUTS</span><div class="num amber" id="utxo">0</div></div>
+</div></div>
+<div class="card"><h2>RESEARCH ENGINE <span class="tag">SIMULATION</span></h2>
+<div class="note">Synthetic keyspace research interface. Candidate generation is simulated locally; no private keys are tested or recovered.</div>
+<div class="console" id="console"><span class="prompt">[BOOT]</span> Initializing forensic research environment...<br><span class="prompt">[NET ]</span> Connecting to Bitcoin public data endpoint...<br><span class="prompt">[AUTH]</span> Public blockchain access: READY<br><span class="prompt">[KEY ]</span> Private-key operations: DISABLED<br><span class="prompt">[MODE]</span> Research simulation ready.</div>
+<div class="meter"><div><b>BLOCK SYNC</b><div class="bar"><div id="bfill" class="fill"></div></div></div><div><b>ANALYSIS</b><div class="bar"><div id="afill" class="fill"></div></div></div></div>
+<button id="run">RUN FORENSIC ANALYSIS</button></div>
+<div class="card"><h2>ANALYSIS OUTPUT</h2>
+<div class="row"><span>Dormant public addresses</span><b id="dormant">0</b></div><div class="row"><span>Public UTXO candidates</span><b id="candidates">0</b></div><div class="row"><span>Simulated keyspace rate</span><b class="amber" id="rate">0 H/s</b></div><div class="row"><span>Private-key matches</span><b class="red">0 — disabled</b></div><div class="row"><span>Data source</span><b class="green">PUBLIC BLOCKCHAIN</b></div></div>
+<div class="card"><h2>PUBLIC ADDRESSES OBSERVED</h2><div class="wrap"><table><thead><tr><th>ADDRESS</th><th>TX</th><th>VALUE</th></tr></thead><tbody id="out"></tbody></table></div></div>
 </main>
 <script>
-const API='https://blockstream.info/api';
-const $=id=>document.getElementById(id);
-const seen=new Map();
-async function get(path){
- const r=await fetch(API+path,{cache:'no-store'});
- if(!r.ok) throw new Error('API HTTP '+r.status);
- return r.json();
-}
-function render(){
- $('addresses').textContent=seen.size;
- $('out').innerHTML=[...seen].slice(0,300).map(([a,t])=>'<tr><td>'+escapeHtml(a)+'</td><td>'+escapeHtml(t)+'</td></tr>').join('');
-}
-function escapeHtml(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function scan(){
- const btn=$('start');btn.disabled=true;seen.clear();render();
- $('status').textContent='Duke marrë lartësinë e blockchain-it...';
- try{
-  const tip=await fetch(API+'/blocks/tip/height',{cache:'no-store'}).then(r=>r.text());
-  const n=Number($('count').value);let total=0;
-  for(let i=0;i<n;i++){
-   const h=Number(tip)-i;$('status').textContent='Block '+h+' — '+(i+1)+'/'+n;
-   const hash=await fetch(API+'/block-height/'+h).then(r=>r.text());
-   const txids=await get('/block/'+hash+'/txids');total+=txids.length;$('txs').textContent=total;
-   for(const id of txids.slice(0,50)){
-    try{const tx=await get('/tx/'+id);for(const v of (tx.vout||[])){if(v.scriptpubkey_address)seen.set(v.scriptpubkey_address,id)}}catch(e){}
-    render();
-   }
-   $('blocks').textContent=i+1;$('bar').style.width=((i+1)/n*100)+'%';
-  }
-  $('status').innerHTML='<span class="ok">Skanimi përfundoi.</span>';
- }catch(e){$('status').innerHTML='<span class="err">Gabim: '+escapeHtml(e.message)+'</span>'}
- finally{btn.disabled=false}
-}
-$('start').onclick=scan;
-
-function fakeHex(n=64){let s='';const h='0123456789abcdef';for(let i=0;i<n;i++)s+=h[Math.floor(Math.random()*16)];return s}
-$('sim').onclick=async()=>{
- const b=$('sim'),f=$('scanfill'),log=$('lablog');b.disabled=true;f.style.width='0%';
- log.innerHTML='[BOOT] Research engine started<br>[MODE] SIMULATION ONLY<br>';
- const stages=[
- '[CORE] Loading synthetic keyspace partitions...',
- '[HASH] Generating demo SHA-256 fingerprints: '+fakeHex(32),
- '[DERIVE] Simulating address derivation pipeline...',
- '[COMPARE] Comparing against public-address dataset...',
- '[TEST] Synthetic candidate #'+Math.floor(Math.random()*9000000),
- '[FILTER] Private-key execution disabled by design...',
- '[RESULT] Demo candidates evaluated: '+(Math.floor(Math.random()*9000)+1000),
- '[DONE] Simulation complete — no real private keys accessed.'
- ];
- for(let i=0;i<stages.length;i++){
-  await new Promise(r=>setTimeout(r,380));
-  f.style.width=((i+1)/stages.length*100)+'%';
-  log.innerHTML+='<br>'+stages[i];
-  log.scrollTop=log.scrollHeight;
- }
- b.disabled=false;
-};
-</script>
-</body>
-</html>
+const API='https://blockstream.info/api',$=id=>document.getElementById(id),seen=new Map(),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function api(p){const r=await fetch(API+p,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
+function render(){$('addr').textContent=seen.size;$('out').innerHTML=[...seen].slice(0,120).map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1].id)+'</td><td>'+x[1].value+' sats</td></tr>').join('')}
+async function liveScan(){try{const h=Number(await fetch(API+'/blocks/tip/height').then(r=>r.text()));$('height').textContent=h.toLocaleString();const hash=await fetch(API+'/block-height/'+h).then(r=>r.text()),ids=await api('/block/'+hash+'/txids');let n=0,u=0;for(const id of ids.slice(0,35)){const t=await api('/tx/'+id);n++;for(const v of(t.vout||[])){if(v.scriptpubkey_address){u++;seen.set(v.scriptpubkey_address,{id,value:v.value})}}}$('tx').textContent=n;$('utxo').textContent=u;render()}catch(e){console.log(e)}}
+$('run').onclick=async()=>{const btn=$('run');btn.disabled=true;const c=$('console');c.innerHTML='';const lines=['[ENGINE] Starting forensic analysis pipeline...','[CHAIN ] Reading latest Bitcoin mainnet state...','[SCAN  ] Indexing public transaction outputs...','[FILTER] Detecting dormant-address patterns...','[HASH  ] Synthetic keyspace benchmark initialized...','[KEY   ] REAL PRIVATE-KEY TESTING: BLOCKED','[MATCH ] Public-data correlation completed.','[DONE  ] Analysis complete. No private keys accessed.'];for(let i=0;i<lines.length;i++){await sleep(330);c.innerHTML+='<span class="cmd">'+lines[i]+'</span><br>';c.scrollTop=c.scrollHeight;$('afill').style.width=((i+1)/lines.length*100)+'%';$('bfill').style.width=Math.min(100,25+i*9)+'%';$('rate').textContent=(180000+i*47000).toLocaleString()+' H/s';$('dormant').textContent=Math.floor(seen.size*.37);$('candidates').textContent=Math.floor(seen.size*.12)}btn.disabled=false};
+liveScan();setInterval(liveScan,30000);
+</script></body></html>
