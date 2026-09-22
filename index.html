@@ -97,23 +97,29 @@ try{
      }
      $('eligible').textContent=(Number($('eligible').textContent)+candidates.length).toLocaleString();
      if(candidates.length){
-       let cursor=0;const workers=Math.min(6,candidates.length);
+       const byTx=new Map();
+       for(const c of candidates){if(!byTx.has(c.txid))byTx.set(c.txid,[]);byTx.get(c.txid).push(c)}
+       const txEntries=[...byTx.entries()];
+       let cursor=0;const workers=Math.min(8,txEntries.length);
        async function verifyWorker(){
          while(true){
-           const i=cursor++;if(i>=candidates.length)return;
-           const c=candidates[i];
+           const i=cursor++;if(i>=txEntries.length)return;
+           const [txid,outs]=txEntries[i];
            try{
-             const spent=await json('/tx/'+c.txid+'/outspends');
-             const os=spent[c.n];
-             if(os&&os.spent===false){
-               results.push(c);$('utxo').textContent=results.length.toLocaleString();
-               log('ok','UTXO HIT :: '+c.value.toFixed(6)+' BTC :: '+c.txid.slice(0,16)+'…');
-               render();
+             const spent=await json('/tx/'+txid+'/outspends');
+             for(const c of outs){
+               const os=spent[c.n];
+               if(os&&os.spent===false){
+                 results.push(c);$('utxo').textContent=results.length.toLocaleString();
+                 log('ok','UTXO HIT :: '+c.value.toFixed(6)+' BTC :: '+txid.slice(0,16)+'…');
+               }
              }
+             render();
            }catch(e){log('warn','OUTSPEND CHECK SKIPPED :: '+e.message)}
          }
        }
        await Promise.all(Array.from({length:workers},verifyWorker));
+       log('cyan','VERIFY BATCH :: '+candidates.length+' outputs across '+txEntries.length+' unique transactions');
      }
      log('cyan','BLOCK '+h+' :: '+totalInBlock+' / '+(limit===Infinity?'ALL':limit)+' TX PROCESSED');
      render();
