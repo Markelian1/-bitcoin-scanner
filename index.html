@@ -77,46 +77,68 @@ try{
  log('ok','SOURCE :: '+engine.name);
 }catch(e){log('warn','SCAN ERROR :: '+e.message)}
 finally{btn.disabled=false}}
-let liveSocket=null,liveSeen=new Set(),liveCount=0;
+let liveSocket=null,liveSeen=new Set(),livePoll=null;
 async function inspectLiveTx(txid){
  try{
-  const tx=await json('/tx/'+txid);
-  const min=Number($('min').value);
-  let hits=0;
+  const tx=await json('/tx/'+txid),min=Number($('min').value);
   for(const v of(tx.vout||[])){
-   const addr=v.scriptpubkey_address,val=(v.value||0)/100000000;
-   if(!addr||val<min)continue;
-   const key=txid+'|'+v.n;
-   if(liveSeen.has(key))continue;
-   liveSeen.add(key);hits++;
+   const addr=v.scriptpubkey_address,val=(v.value||0)/100000000,key=txid+'|'+v.n;
+   if(!addr||val<min||liveSeen.has(key))continue;
+   liveSeen.add(key);
    const item={address:addr,value:val,txid,n:Number(v.n),block:tx.status?.block_height||0,age:0};
    results.push(item);$('utxo').textContent=results.length.toLocaleString();
-   log('ok','LIVE MEMPOOL OUTPUT :: '+val.toFixed(6)+' BTC :: '+txid.slice(0,16)+'…');
-   render();
+   log('ok','LIVE MEMPOOL OUTPUT :: '+val.toFixed(6)+' BTC :: '+txid.slice(0,16)+'…');render();
   }
-  if(hits)$('eligible').textContent=(Number($('eligible').textContent)+hits).toLocaleString();
  }catch(e){log('warn','LIVE TX SKIPPED :: '+e.message)}
 }
-function stopLive(){if(liveSocket){try{liveSocket.close()}catch(_){ }liveSocket=null}const b=$('live');if(b)b.textContent='LIVE BTC MEMPOOL SCAN';}
+async function pollLive(){
+ try{
+  const list=await json('/mempool/recent');
+  for(const x of (Array.isArray(list)?list:[]).slice(0,10))if(x.txid&&!liveSeen.has('tx:'+x.txid)){liveSeen.add('tx:'+x.txid);await inspectLiveTx(x.txid)}
+  log('cyan','LIVE MEMPOOL POLL :: '+((Array.isArray(list)?list:[]).length)+' recent transactions checked');
+ }catch(e){log('warn','LIVE MEMPOOL POLL :: '+e.message)}
+}
+function stopLive(){
+ if(liveSocket){try{liveSocket.close()}catch(_){ }liveSocket=null}
+ if(livePoll){clearInterval(livePoll);livePoll=null}
+ const b=$('live');if(b)b.textContent='LIVE BTC MEMPOOL SCAN';
+}
 function startLive(){
  const b=$('live');
- if(liveSocket){stopLive();log('warn','LIVE MEMPOOL :: stopped');return}
+ if(liveSocket||livePoll){stopLive();log('warn','LIVE MEMPOOL :: stopped');return}
  liveSeen=new Set();b.textContent='STOP LIVE MEMPOOL';
+ log('cyan','LIVE MEMPOOL :: starting WebSocket + REST fallback');
  try{
   liveSocket=new WebSocket('wss://mempool.space/api/v1/ws');
-  liveSocket.onopen=()=>{log('ok','LIVE MEMPOOL :: WebSocket connected');liveSocket.send(JSON.stringify({action:'want',data:['stats']}));liveSocket.send(JSON.stringify({'track-mempool-txids':true}));};
+  liveSocket.onopen=()=>{
+   log('ok','LIVE MEMPOOL :: WebSocket connected');
+   try{liveSocket.send(JSON.stringify({"track-mempool-txids":true}))}catch(_){}
+  };
   liveSocket.onmessage=async ev=>{
    try{
     const m=JSON.parse(ev.data);
-    if(m.added&&Array.isArray(m.added)){log('cyan','MEMPOOL ADD :: '+m.added.length+' txids');for(const id of m.added.slice(0,25))await inspectLiveTx(id)}
-    if(m.mined&&Array.isArray(m.mined))log('cyan','MEMPOOL MINED :: '+m.mined.length+' txids');
-    if(m.removed&&Array.isArray(m.removed))log('dim','MEMPOOL REMOVED :: '+m.removed.length+' txids');
-    if(m.replaced&&Array.isArray(m.replaced))log('warn','MEMPOOL RBF :: '+m.replaced.length+' txids');
+    for(const id of (m.added||[]).slice(0,25))await inspectLiveTx(id);
+    if(m.added?.length)log('cyan','MEMPOOL ADD :: '+m.added.length+' txids');
+    if(m.mined?.length)log('cyan','MEMPOOL MINED :: '+m.mined.length+' txids');
+    if(m.removed?.length)log('dim','MEMPOOL REMOVED :: '+m.removed.length+' txids');
+    if(m.replaced?.length)log('warn','MEMPOOL RBF :: '+m.replaced.length+' txids');
    }catch(_){}
   };
-  liveSocket.onerror=()=>log('warn','LIVE MEMPOOL :: WebSocket error');
-  liveSocket.onclose=()=>{if(liveSocket){liveSocket=null; b.textContent='LIVE BTC MEMPOOL SCAN';}log('warn','LIVE MEMPOOL :: disconnected')};
- }catch(e){log('warn','LIVE MEMPOOL :: '+e.message);stopLive()}
+  liveSocket.onerror=()=>{
+   log('warn','LIVE MEMPOOL :: WebSocket unavailable, switching to REST polling');
+   try{liveSocket.close()}catch(_){}
+   liveSocket=null;
+   if(!livePoll){pollLive();livePoll=setInterval(pollLive,5000)}
+  };
+  liveSocket.onclose=()=>{
+   if(!livePoll&&!liveSocket){livePoll=setInterval(pollLive,5000);pollLive()}
+   b.textContent='STOP LIVE MEMPOOL';
+  };
+  setTimeout(()=>{if(liveSocket&&liveSocket.readyState!==1){try{liveSocket.close()}catch(_){ }liveSocket=null;if(!livePoll){livePoll=setInterval(pollLive,5000);pollLive()}}},7000);
+ }catch(e){
+  log('warn','LIVE MEMPOOL :: '+e.message);
+  liveSocket=null;pollLive();livePoll=setInterval(pollLive,5000);
+ }
 }
 const CHAINS=['bitcoin','bitcoin-cash','ethereum','litecoin','bitcoin-sv','dogecoin','dash','ripple','groestlcoin','stellar','monero','cardano','zcash','mixin','tezos','ecash'];const NAMES={'bitcoin':'BTC','bitcoin-cash':'BCH','ethereum':'ETH','litecoin':'LTC','bitcoin-sv':'BSV','dogecoin':'DOGE','dash':'DASH','ripple':'XRP','groestlcoin':'GRS','stellar':'XLM','monero':'XMR','cardano':'ADA','zcash':'ZEC','mixin':'MIX','tezos':'XTZ','ecash':'XEC'};async function multiScan(){const b=$('multi');b.disabled=true;const box=$('chains');box.innerHTML=CHAINS.map(x=>'<div class="stat"><span class="sub">'+NAMES[x]+'</span><div class="num" id="c_'+x.replace(/-/g,'_')+'">...</div></div>').join('');log('cyan','MULTI-CHAIN :: one aggregate public API request :: '+CHAINS.length+' networks');try{let data=null,last='';for(let k=0;k<3;k++){try{const r=await fetch('https://api.blockchair.com/stats',{cache:'no-store'});if(!r.ok){last='HTTP '+r.status;await sleep(800*(k+1));continue}data=await r.json();break}catch(e){last=e.message;await sleep(800*(k+1))}}if(!data)throw Error(last||'API unavailable');let ok=0;for(const x of CHAINS){const d=data.data?.[x]?.data||data.data?.[x]||{};const el=$('c_'+x.replace(/-/g,'_'));const height=d.best_block_height??(d.blocks!=null?Number(d.blocks)-1:null);if(height!=null){el.textContent=Number(height).toLocaleString();el.className='num green';ok++;log('ok','CHAIN '+NAMES[x]+' :: height='+Number(height).toLocaleString()+' :: tx24h='+(d.transactions_24h??'—'));}else{el.textContent='N/A';el.className='num amber';log('warn','CHAIN '+NAMES[x]+' :: no stats in aggregate response')}}log('ok','MULTI-CHAIN COMPLETE :: '+ok+'/'+CHAINS.length+' networks returned data');}catch(e){log('warn','MULTI-CHAIN API :: '+e.message);log('warn','No false positives: network marked unavailable instead of pretending it was checked.')}finally{b.disabled=false}}$('multi').onclick=multiScan;$('run').onclick=scan;$('live').onclick=startLive;(async()=>{try{const tip=await selectEngine();$('height').textContent=tip.toLocaleString();log('ok','ENGINE READY :: '+engine.name+' :: tip='+tip)}catch(e){log('warn','ENGINE OFFLINE :: '+e.message)}})();
 </script></body></html>
