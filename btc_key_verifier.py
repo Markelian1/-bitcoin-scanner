@@ -135,14 +135,14 @@ def normalize_key(text):
         raise ValueError("Private key is outside secp256k1 range")
     return key, compressed
 
-def check(text):
+def check(text, target):
     key, compressed = normalize_key(text)
     modes = [compressed] if compressed is not None else [True, False]
     matches = []
     for mode in modes:
         pub = pubkey_from_private(key, mode)
         address = p2pkh_from_pubkey(pub)
-        matches.append((mode, address, address == TARGET))
+        matches.append((mode, address, address == target))
     return matches
 
 def main():
@@ -160,8 +160,7 @@ def main():
     )
     args = parser.parse_args()
 
-    global TARGET
-    TARGET = args.target.strip()
+    target = args.target.strip()
 
     if args.key:
         print("WARNING: command-line arguments can be stored in shell history/process listings.")
@@ -170,7 +169,7 @@ def main():
         value = getpass.getpass("Enter WIF or 64-hex private key (input is hidden): ")
 
     try:
-        matches = check(value)
+        matches = check(value, target)
     except Exception as e:
         print(f"ERROR: {e}")
         sys.exit(2)
