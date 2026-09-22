@@ -5,7 +5,7 @@
 </style></head><body><main>
 <div class="top"><div class="brand">₿ MULTI-CHAIN BLOCKCHAIN RESEARCH TERMINAL</div><div class="live">● PUBLIC NETWORKS ONLINE</div></div>
 <div class="card"><h2>MULTI-CHAIN NETWORK TELEMETRY</h2><div class="grid" id="chains"></div></div><div class="card"><h2>BLOCKCHAIN TELEMETRY</h2><div class="grid"><div class="stat"><span class="sub">TIP HEIGHT</span><div class="num" id="height">—</div></div><div class="stat"><span class="sub">BLOCKS</span><div class="num blue" id="blocks">0</div></div><div class="stat"><span class="sub">TX SCANNED</span><div class="num blue" id="tx">0</div></div><div class="stat"><span class="sub">ADDRESSES</span><div class="num green" id="addr">0</div></div><div class="stat"><span class="sub">UTXOs</span><div class="num amber" id="utxo">0</div></div><div class="stat"><span class="sub">BTC FOUND</span><div class="num" id="btc">0</div></div></div></div>
-<div class="card"><h2>PUBLIC WALLET DISCOVERY</h2><div class="controls"><div class="control"><label>BLOCK WINDOW</label><select id="window"><option value="5">5 blocks</option><option value="10" selected>10 blocks</option><option value="25">25 blocks</option><option value="50">50 blocks</option></select></div><div class="control"><label>TRANSACTIONS / BLOCK</label><select id="limit"><option value="all" selected>ALL TRANSACTIONS</option><option value="100">FIRST 100</option><option value="500">FIRST 500</option></select></div><div class="control"><label>MIN UTXO (BTC)</label><select id="min"><option value="0.001" selected>0.001</option><option value="0.01">0.01</option><option value="0.1">0.1</option><option value="1">1</option></select></div></div><div class="console" id="console"></div><button id="multi">FAST MULTI-CHAIN CHECK</button><button id="run">DEEP BTC PUBLIC SCAN</button></div>
+<div class="card"><h2>PUBLIC WALLET DISCOVERY</h2><div class="controls"><div class="control"><label>BLOCK WINDOW</label><select id="window"><option value="5">5 blocks</option><option value="10" selected>10 blocks</option><option value="25">25 blocks</option><option value="50">50 blocks</option></select></div><div class="control"><label>TRANSACTIONS / BLOCK</label><select id="limit"><option value="all" selected>ALL TRANSACTIONS</option><option value="100">FIRST 100</option><option value="500">FIRST 500</option></select></div><div class="control"><label>MIN UTXO (BTC)</label><select id="min"><option value="0.001" selected>0.001</option><option value="0.01">0.01</option><option value="0.1">0.1</option><option value="1">1</option></select></div></div><div class="console" id="console"></div><button id="multi">FAST MULTI-CHAIN CHECK</button><button id="run">DEEP BTC PUBLIC SCAN</button><button id="live">LIVE BTC MEMPOOL SCAN</button></div>
 <div class="card"><h2>DISCOVERY RESULTS</h2><div class="row"><span>Unspent outputs discovered</span><b id="candidates">0</b></div><div class="row"><span>Eligible outputs checked</span><b id="eligible">0</b></div><div class="row"><span>Largest observed UTXO</span><b id="largest">0 BTC</b></div><div class="row"><span>Oldest observed block</span><b id="oldest">—</b></div><div class="row"><span>Analysis scope</span><b class="green">PUBLIC BLOCKCHAIN</b></div></div>
 <div class="card"><h2>ADDRESS / UTXO INDEX</h2><div class="wrap"><table><thead><tr><th>ADDRESS</th><th>VALUE BTC</th><th>TXID</th><th>BLOCK</th><th>AGE</th></tr></thead><tbody id="out"></tbody></table></div></div>
 </main>
@@ -77,5 +77,46 @@ try{
  log('ok','SOURCE :: '+engine.name);
 }catch(e){log('warn','SCAN ERROR :: '+e.message)}
 finally{btn.disabled=false}}
-const CHAINS=['bitcoin','bitcoin-cash','ethereum','litecoin','bitcoin-sv','dogecoin','dash','ripple','groestlcoin','stellar','monero','cardano','zcash','mixin','tezos','ecash'];const NAMES={'bitcoin':'BTC','bitcoin-cash':'BCH','ethereum':'ETH','litecoin':'LTC','bitcoin-sv':'BSV','dogecoin':'DOGE','dash':'DASH','ripple':'XRP','groestlcoin':'GRS','stellar':'XLM','monero':'XMR','cardano':'ADA','zcash':'ZEC','mixin':'MIX','tezos':'XTZ','ecash':'XEC'};async function multiScan(){const b=$('multi');b.disabled=true;const box=$('chains');box.innerHTML=CHAINS.map(x=>'<div class="stat"><span class="sub">'+NAMES[x]+'</span><div class="num" id="c_'+x.replace(/-/g,'_')+'">...</div></div>').join('');log('cyan','MULTI-CHAIN :: one aggregate public API request :: '+CHAINS.length+' networks');try{let data=null,last='';for(let k=0;k<3;k++){try{const r=await fetch('https://api.blockchair.com/stats',{cache:'no-store'});if(!r.ok){last='HTTP '+r.status;await sleep(800*(k+1));continue}data=await r.json();break}catch(e){last=e.message;await sleep(800*(k+1))}}if(!data)throw Error(last||'API unavailable');let ok=0;for(const x of CHAINS){const d=data.data?.[x]?.data||data.data?.[x]||{};const el=$('c_'+x.replace(/-/g,'_'));const height=d.best_block_height??(d.blocks!=null?Number(d.blocks)-1:null);if(height!=null){el.textContent=Number(height).toLocaleString();el.className='num green';ok++;log('ok','CHAIN '+NAMES[x]+' :: height='+Number(height).toLocaleString()+' :: tx24h='+(d.transactions_24h??'—'));}else{el.textContent='N/A';el.className='num amber';log('warn','CHAIN '+NAMES[x]+' :: no stats in aggregate response')}}log('ok','MULTI-CHAIN COMPLETE :: '+ok+'/'+CHAINS.length+' networks returned data');}catch(e){log('warn','MULTI-CHAIN API :: '+e.message);log('warn','No false positives: network marked unavailable instead of pretending it was checked.')}finally{b.disabled=false}}$('multi').onclick=multiScan;$('run').onclick=scan;(async()=>{try{const tip=await selectEngine();$('height').textContent=tip.toLocaleString();log('ok','ENGINE READY :: '+engine.name+' :: tip='+tip)}catch(e){log('warn','ENGINE OFFLINE :: '+e.message)}})();
+let liveSocket=null,liveSeen=new Set(),liveCount=0;
+async function inspectLiveTx(txid){
+ try{
+  const tx=await json('/tx/'+txid);
+  const min=Number($('min').value);
+  let hits=0;
+  for(const v of(tx.vout||[])){
+   const addr=v.scriptpubkey_address,val=(v.value||0)/100000000;
+   if(!addr||val<min)continue;
+   const key=txid+'|'+v.n;
+   if(liveSeen.has(key))continue;
+   liveSeen.add(key);hits++;
+   const item={address:addr,value:val,txid,n:Number(v.n),block:tx.status?.block_height||0,age:0};
+   results.push(item);$('utxo').textContent=results.length.toLocaleString();
+   log('ok','LIVE MEMPOOL OUTPUT :: '+val.toFixed(6)+' BTC :: '+txid.slice(0,16)+'…');
+   render();
+  }
+  if(hits)$('eligible').textContent=(Number($('eligible').textContent)+hits).toLocaleString();
+ }catch(e){log('warn','LIVE TX SKIPPED :: '+e.message)}
+}
+function stopLive(){if(liveSocket){try{liveSocket.close()}catch(_){ }liveSocket=null}const b=$('live');if(b)b.textContent='LIVE BTC MEMPOOL SCAN';}
+function startLive(){
+ const b=$('live');
+ if(liveSocket){stopLive();log('warn','LIVE MEMPOOL :: stopped');return}
+ liveSeen=new Set();b.textContent='STOP LIVE MEMPOOL';
+ try{
+  liveSocket=new WebSocket('wss://mempool.space/api/v1/ws');
+  liveSocket.onopen=()=>{log('ok','LIVE MEMPOOL :: WebSocket connected');liveSocket.send(JSON.stringify({action:'want',data:['stats']}));liveSocket.send(JSON.stringify({'track-mempool-txids':true}));};
+  liveSocket.onmessage=async ev=>{
+   try{
+    const m=JSON.parse(ev.data);
+    if(m.added&&Array.isArray(m.added)){log('cyan','MEMPOOL ADD :: '+m.added.length+' txids');for(const id of m.added.slice(0,25))await inspectLiveTx(id)}
+    if(m.mined&&Array.isArray(m.mined))log('cyan','MEMPOOL MINED :: '+m.mined.length+' txids');
+    if(m.removed&&Array.isArray(m.removed))log('dim','MEMPOOL REMOVED :: '+m.removed.length+' txids');
+    if(m.replaced&&Array.isArray(m.replaced))log('warn','MEMPOOL RBF :: '+m.replaced.length+' txids');
+   }catch(_){}
+  };
+  liveSocket.onerror=()=>log('warn','LIVE MEMPOOL :: WebSocket error');
+  liveSocket.onclose=()=>{if(liveSocket){liveSocket=null; b.textContent='LIVE BTC MEMPOOL SCAN';}log('warn','LIVE MEMPOOL :: disconnected')};
+ }catch(e){log('warn','LIVE MEMPOOL :: '+e.message);stopLive()}
+}
+const CHAINS=['bitcoin','bitcoin-cash','ethereum','litecoin','bitcoin-sv','dogecoin','dash','ripple','groestlcoin','stellar','monero','cardano','zcash','mixin','tezos','ecash'];const NAMES={'bitcoin':'BTC','bitcoin-cash':'BCH','ethereum':'ETH','litecoin':'LTC','bitcoin-sv':'BSV','dogecoin':'DOGE','dash':'DASH','ripple':'XRP','groestlcoin':'GRS','stellar':'XLM','monero':'XMR','cardano':'ADA','zcash':'ZEC','mixin':'MIX','tezos':'XTZ','ecash':'XEC'};async function multiScan(){const b=$('multi');b.disabled=true;const box=$('chains');box.innerHTML=CHAINS.map(x=>'<div class="stat"><span class="sub">'+NAMES[x]+'</span><div class="num" id="c_'+x.replace(/-/g,'_')+'">...</div></div>').join('');log('cyan','MULTI-CHAIN :: one aggregate public API request :: '+CHAINS.length+' networks');try{let data=null,last='';for(let k=0;k<3;k++){try{const r=await fetch('https://api.blockchair.com/stats',{cache:'no-store'});if(!r.ok){last='HTTP '+r.status;await sleep(800*(k+1));continue}data=await r.json();break}catch(e){last=e.message;await sleep(800*(k+1))}}if(!data)throw Error(last||'API unavailable');let ok=0;for(const x of CHAINS){const d=data.data?.[x]?.data||data.data?.[x]||{};const el=$('c_'+x.replace(/-/g,'_'));const height=d.best_block_height??(d.blocks!=null?Number(d.blocks)-1:null);if(height!=null){el.textContent=Number(height).toLocaleString();el.className='num green';ok++;log('ok','CHAIN '+NAMES[x]+' :: height='+Number(height).toLocaleString()+' :: tx24h='+(d.transactions_24h??'—'));}else{el.textContent='N/A';el.className='num amber';log('warn','CHAIN '+NAMES[x]+' :: no stats in aggregate response')}}log('ok','MULTI-CHAIN COMPLETE :: '+ok+'/'+CHAINS.length+' networks returned data');}catch(e){log('warn','MULTI-CHAIN API :: '+e.message);log('warn','No false positives: network marked unavailable instead of pretending it was checked.')}finally{b.disabled=false}}$('multi').onclick=multiScan;$('run').onclick=scan;$('live').onclick=startLive;(async()=>{try{const tip=await selectEngine();$('height').textContent=tip.toLocaleString();log('ok','ENGINE READY :: '+engine.name+' :: tip='+tip)}catch(e){log('warn','ENGINE OFFLINE :: '+e.message)}})();
 </script></body></html>
